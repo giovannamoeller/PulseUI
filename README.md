@@ -120,7 +120,7 @@ struct MyApp: App {
 
 ## Documentation
 
-For detailed documentation and usage examples, we're still building a complete documentation. Hold on!
+For detailed documentation and usage examples, see the [PulseUI Usage Guide](Usage.md).
 
 ## License
 
@@ -129,3 +129,5 @@ This project is available under the MIT license. See the LICENSE file for more i
 ## Author
 
 Giovanna Moeller
+
+
