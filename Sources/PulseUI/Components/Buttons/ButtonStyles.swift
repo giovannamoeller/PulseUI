@@ -1,8 +1,8 @@
 //
 //  ButtonStyles.swift
-//  PulseUI
+//  DesignSystem
 //
-//  Created by Giovanna Moeller on 28/03/25.
+//  Created on 29/03/25.
 //
 
 import SwiftUI
@@ -12,6 +12,7 @@ import SwiftUI
 public struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.designSystem) private var designSystem
+    @Environment(\.colorScheme) private var colorScheme
     
     public init() {}
     
@@ -25,7 +26,7 @@ public struct PrimaryButtonStyle: ButtonStyle {
                     ? designSystem.primaryColor
                     : designSystem.primaryColor.opacity(0.5)
             )
-            .foregroundColor(.white)
+            .foregroundColor(colorScheme == .dark ? .black : .white)
             .cornerRadius(AppShapes.mediumRadius)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .opacity(configuration.isPressed ? 0.9 : 1)
@@ -37,6 +38,7 @@ public struct PrimaryButtonStyle: ButtonStyle {
 public struct SecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.designSystem) private var designSystem
+    @Environment(\.colorScheme) private var colorScheme
     
     public init() {}
     
@@ -92,6 +94,7 @@ public struct TextButtonStyle: ButtonStyle {
 public struct IconButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.designSystem) private var designSystem
+    @Environment(\.colorScheme) private var colorScheme
     
     private let size: CGFloat
     private let backgroundColor: Color?
@@ -106,8 +109,12 @@ public struct IconButtonStyle: ButtonStyle {
             .font(.system(size: size * 0.4))
             .foregroundColor(
                 isEnabled
-                    ? (backgroundColor != nil ? .white : designSystem.primaryColor)
-                    : (backgroundColor != nil ? .white.opacity(0.7) : designSystem.primaryColor.opacity(0.5))
+                    ? (backgroundColor != nil
+                        ? (colorScheme == .dark ? .black : .white)
+                        : designSystem.primaryColor)
+                    : (backgroundColor != nil
+                        ? (colorScheme == .dark ? .black.opacity(0.7) : .white.opacity(0.7))
+                        : designSystem.primaryColor.opacity(0.5))
             )
             .frame(width: size, height: size)
             .background(
@@ -128,6 +135,7 @@ public struct IconButtonStyle: ButtonStyle {
 public struct FloatingButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.designSystem) private var designSystem
+    @Environment(\.colorScheme) private var colorScheme
     
     private let size: CGFloat
     private let backgroundColor: Color?
@@ -140,7 +148,7 @@ public struct FloatingButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: size * 0.4))
-            .foregroundColor(.white)
+            .foregroundColor(colorScheme == .dark ? .black : .white)
             .frame(width: size, height: size)
             .background(
                 Circle()
@@ -150,7 +158,7 @@ public struct FloatingButtonStyle: ButtonStyle {
                             : (backgroundColor?.opacity(0.5) ?? designSystem.primaryColor.opacity(0.5))
                     )
                     .shadow(
-                        color: (backgroundColor ?? designSystem.primaryColor).opacity(0.3),
+                        color: designSystem.shadowColor,
                         radius: 8,
                         x: 0,
                         y: 4
@@ -164,23 +172,27 @@ public struct FloatingButtonStyle: ButtonStyle {
 @available(iOS 14.0, *)
 public struct GradientButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.colorScheme) private var colorScheme
     
     private let startColor: Color
     private let endColor: Color
-    private let textColor: Color
+    private let customTextColor: Color?
     
     public init(
         startColor: Color,
         endColor: Color,
-        textColor: Color = .white
+        textColor: Color? = nil
     ) {
         self.startColor = startColor
         self.endColor = endColor
-        self.textColor = textColor
+        self.customTextColor = textColor
     }
     
     public func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        // Determine text color here, where environment values are available
+        let textColor = customTextColor ?? (colorScheme == .dark ? .black : .white)
+        
+        return configuration.label
             .font(AppTypography.body())
             .padding(.vertical, AppSpacing.small)
             .padding(.horizontal, AppSpacing.medium)
@@ -208,15 +220,16 @@ public struct GradientButtonStyle: ButtonStyle {
 // MARK: - Advanced Toggle Style
 public struct CustomToggleStyle: ToggleStyle {
     @Environment(\.designSystem) private var designSystem
+    @Environment(\.colorScheme) private var colorScheme
     
     private let onColor: Color?
     private let offColor: Color?
-    private let thumbColor: Color
+    private let thumbColor: Color?
     
     public init(
         onColor: Color? = nil,
         offColor: Color? = nil,
-        thumbColor: Color = .white
+        thumbColor: Color? = nil
     ) {
         self.onColor = onColor
         self.offColor = offColor
@@ -234,12 +247,12 @@ public struct CustomToggleStyle: ToggleStyle {
                     .fill(
                         configuration.isOn
                             ? (onColor ?? designSystem.primaryColor)
-                            : (offColor ?? Color.gray.opacity(0.3))
+                            : (offColor ?? (colorScheme == .dark ? Color.gray.opacity(0.4) : Color.gray.opacity(0.3)))
                     )
                     .frame(width: 50, height: 30)
                 
                 Circle()
-                    .fill(thumbColor)
+                    .fill(thumbColor ?? (colorScheme == .dark ? Color.black : Color.white))
                     .shadow(radius: 1, x: 0, y: 1)
                     .frame(width: 26, height: 26)
                     .offset(x: configuration.isOn ? 10 : -10)
@@ -249,37 +262,5 @@ public struct CustomToggleStyle: ToggleStyle {
                 configuration.isOn.toggle()
             }
         }
-    }
-}
-
-@available(iOS 14.0, *)
-// MARK: - View Extensions
-public extension View {
-    func primaryButtonStyle() -> some View {
-        self.buttonStyle(PrimaryButtonStyle())
-    }
-    
-    func secondaryButtonStyle() -> some View {
-        self.buttonStyle(SecondaryButtonStyle())
-    }
-    
-    func textButtonStyle() -> some View {
-        self.buttonStyle(TextButtonStyle())
-    }
-    
-    func iconButtonStyle(size: CGFloat = 44, backgroundColor: Color? = nil) -> some View {
-        self.buttonStyle(IconButtonStyle(size: size, backgroundColor: backgroundColor))
-    }
-    
-    func floatingButtonStyle(size: CGFloat = 56, backgroundColor: Color? = nil) -> some View {
-        self.buttonStyle(FloatingButtonStyle(size: size, backgroundColor: backgroundColor))
-    }
-    
-    func gradientButtonStyle(startColor: Color, endColor: Color, textColor: Color = .white) -> some View {
-        self.buttonStyle(GradientButtonStyle(startColor: startColor, endColor: endColor, textColor: textColor))
-    }
-    
-    func customToggleStyle(onColor: Color? = nil, offColor: Color? = nil, thumbColor: Color = .white) -> some View {
-        self.toggleStyle(CustomToggleStyle(onColor: onColor, offColor: offColor, thumbColor: thumbColor))
     }
 }
